@@ -1,0 +1,42 @@
+# ------------------ StatefulSet Definition ------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-statefulset        # name of your StatefulSet
+  namespace: mysql               # namespace where it will run
+spec:
+  serviceName: mysql-service     # must match the headless service name (below)
+  replicas: 3                    # number of MySQL pods
+  selector:
+    matchLabels:
+      app: mysql                 # matches pods with label 'app: mysql'
+
+  # The template defines how each Pod will look
+  template:
+    metadata:
+      labels:
+        app: mysql               # label for identifying MySQL pods
+    spec:
+      containers:
+      - name: mysql              # container name
+        image: mysql:8.0         # official MySQL image
+        ports:
+        - containerPort: 3306    # default MySQL port
+        env:                     # environment variables for MySQL setup
+        - name: MYSQL_ROOT_PASSWORD
+          value: root            # root password
+        - name: MYSQL_DATABASE
+          value: devops          # default database name
+        volumeMounts:            # mount storage inside the container
+        - name: mysql-data
+          mountPath: /var/lib/mysql  # MySQL stores data here
+
+  # Persistent storage template (one volume per pod)
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes: ["ReadWriteOnce"]   # each volume can be used by one pod
+      resources:
+        requests:
+          storage: 1Gi                 # size of each pod's disk
